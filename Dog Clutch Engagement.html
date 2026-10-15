@@ -1,0 +1,695 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Dog Clutch Engagement</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Engage a dog clutch between a geared pair of shafts and a stationary shaft, predict the new speeds and see why energy is lost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+/* Layout: drafting-paper workbench. 3D stage left, worksheet panel right; stacks below 980px.
+   Single theme by choice, matching the companion Machine Drive activity. Shaft colours follow the source figure. */
+:root{
+  --paper:#f3f2ec; --sheet:#fffffd; --sheet-2:#f7f6f1; --ink:#1c1f23; --muted:#575d64; --rule:#d5d2c6;
+  --accent:#1f49a6; --accent-ink:#ffffff;
+  --ok:#1b6e3f; --ok-soft:#e1f0e5; --bad:#ac2419; --bad-soft:#f8e3df; --warn:#7f5200; --warn-soft:#f7ecd4;
+  --note:#f8e68a; --note-ink:#2a2512;
+  --sA:#1d3fc9; --sB:#b3121a; --sC:#12782a;
+  --f-type:'Courier Prime','Courier New',ui-monospace,monospace;
+  --f-body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+header.bar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 20px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.brand h1{margin:0;font-family:var(--f-type);font-weight:700;font-size:26px;line-height:1.1;text-wrap:balance}
+.brand p{margin:3px 0 0;color:var(--muted);font-family:var(--f-type);font-size:13px}
+.steps{display:flex;gap:6px;flex-wrap:wrap}
+.steps button{display:flex;align-items:baseline;gap:8px;border:1px solid var(--ink);background:var(--sheet);border-radius:3px;padding:6px 12px;cursor:pointer}
+.steps .n{font-family:var(--f-type);font-weight:700}
+.steps .t{font-weight:700;font-size:14px}
+.steps .s{font-size:12px;font-weight:700;color:var(--ok)}
+.steps button[aria-selected="true"]{background:var(--ink);color:var(--sheet)}
+.steps button[aria-selected="true"] .s{color:#9fe0b7}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:12px;min-height:0}
+.stage{position:relative;min-height:0;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--paper);touch-action:none}
+.stage canvas{display:block;width:100%;height:100%}
+.overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.plabel{position:absolute;left:0;top:0;font-family:var(--f-type);font-size:14px;white-space:nowrap;color:var(--ink);
+  text-shadow:0 0 3px var(--paper),0 0 3px var(--paper),0 0 6px var(--paper)}
+.plabel.big{font-family:var(--f-body);font-size:24px;font-weight:700}
+.plabel.a{color:var(--sA)} .plabel.b{color:var(--sB)} .plabel.c{color:var(--sC)}
+.hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none;align-items:flex-start}
+.hud > *{pointer-events:auto}
+.hint{background:rgba(255,255,253,.92);border:1px solid var(--rule);border-radius:3px;padding:6px 10px;font-size:12.5px;color:var(--muted);max-width:420px}
+kbd{font-family:var(--f-type);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:3px;padding:0 4px;background:var(--sheet);color:var(--ink)}
+.viewbtns{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.sticky{position:absolute;right:16px;bottom:78px;width:240px;background:var(--note);color:var(--note-ink);font-family:var(--f-type);font-size:13.5px;line-height:1.4;
+  padding:16px 16px 18px;transform:rotate(-1.2deg);box-shadow:0 1px 1px rgba(0,0,0,.08),4px 8px 14px rgba(40,30,0,.22);pointer-events:none;transition:transform .25s}
+.sticky p{margin:0 0 10px} .sticky p:last-child{margin:0}
+.sticky.flash{transform:rotate(-1.2deg) scale(1.03)}
+.toolbar{position:absolute;left:10px;right:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;pointer-events:none}
+.toolbar > *{pointer-events:auto}
+.tgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:rgba(255,255,253,.94);border:1px solid var(--rule);border-radius:4px;padding:5px}
+.btn{border:1px solid var(--ink);background:var(--sheet);border-radius:3px;padding:6px 11px;cursor:pointer;font-weight:700;font-size:13.5px;line-height:1.3}
+.btn:hover{background:var(--sheet-2)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.icon{min-width:34px;padding:6px 8px;font-family:var(--f-type)}
+.btn-test{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-family:var(--f-type);font-size:18px;padding:9px 20px}
+.btn-test:hover{background:var(--accent);filter:brightness(1.1)}
+.btn-test.reset{background:var(--sheet);color:var(--ink);border-color:var(--ink)}
+.check{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:700;padding:0 4px;cursor:pointer}
+.check input{width:16px;height:16px;accent-color:var(--accent)}
+.tgroup select{border:1px solid var(--rule);border-radius:3px;background:var(--sheet);padding:5px 6px;font-size:13px}
+.sm{font-size:12px;color:var(--muted);font-weight:700}
+
+.panel{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:12px;padding-bottom:4px}
+.sec{background:var(--sheet);border:1px solid var(--rule);border-radius:4px;padding:14px 16px;min-width:0}
+.sec h2{margin:0 0 8px;font-family:var(--f-type);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sec h3{margin:0 0 6px;font-family:var(--f-type);font-weight:700;font-size:19px;line-height:1.2;text-wrap:balance}
+.sec p{margin:0 0 8px} .sec p:last-child{margin-bottom:0}
+.small{font-size:13px;color:var(--muted)}
+.math{font-family:var(--f-type);font-size:13.5px;white-space:nowrap}
+.sa{color:var(--sA);font-weight:700} .sb{color:var(--sB);font-weight:700} .sc{color:var(--sC);font-weight:700}
+
+.sliders{display:flex;flex-direction:column;gap:10px}
+.sl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.sl label{font-size:14px;font-weight:700}
+.sl output{font-family:var(--f-type);font-variant-numeric:tabular-nums;font-size:14px}
+.sl input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.sl input[disabled]{opacity:.5}
+.case{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 12px;font-size:13.5px;margin:6px 0 12px}
+.case div{display:flex;flex-direction:column;border-top:1px solid var(--ink);padding-top:3px}
+.case span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.case strong{font-family:var(--f-type);font-variant-numeric:tabular-nums}
+.q{display:grid;grid-template-columns:minmax(0,1fr) 118px;gap:4px 10px;align-items:center;padding-bottom:10px;border-bottom:1px dashed var(--rule)}
+.q label{font-size:14px}
+.q .unit{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.q input,.q select{border:1px solid var(--rule);border-radius:3px;background:var(--sheet-2);padding:6px 8px;width:100%;font-family:var(--f-type);font-variant-numeric:tabular-nums}
+.verdict{grid-column:1/-1;font-size:13px;font-weight:700}
+.verdict:empty{display:none}
+.verdict.ok{color:var(--ok)} .verdict.bad{color:var(--bad)}
+form.stack{display:flex;flex-direction:column;gap:10px}
+fieldset{border:1px solid var(--rule);border-radius:4px;padding:8px 12px 10px;margin:0}
+legend{font-weight:700;font-size:14px;padding:0 4px}
+.opts{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.opts label{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;cursor:pointer;font-size:14px}
+.opts input{margin-top:4px;accent-color:var(--accent)}
+.rowend{display:flex;gap:8px;flex-wrap:wrap}
+
+table.read{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+table.read th{text-align:left;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:4px 6px 4px 0;border-bottom:1px solid var(--ink)}
+table.read td{padding:5px 6px 5px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+table.read td.num{font-family:var(--f-type);text-align:right}
+.tablewrap{overflow-x:auto}
+.after{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin-top:10px}
+.after div{display:flex;flex-direction:column;border-top:1px solid var(--ink);padding-top:3px}
+.after span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.after strong{font-family:var(--f-type);font-size:16px;font-variant-numeric:tabular-nums}
+.plotwrap{width:100%;aspect-ratio:16/10;max-width:100%;margin-top:10px}
+.plotwrap canvas{width:100%;height:100%;display:block}
+.feedback{border-radius:4px;padding:14px 16px;border:1px solid var(--rule);background:var(--sheet)}
+.feedback.bad{background:var(--bad-soft);border-color:var(--bad)}
+.feedback.ok{background:var(--ok-soft);border-color:var(--ok)}
+.feedback.warn{background:var(--warn-soft);border-color:var(--warn)}
+.feedback p{margin:0 0 8px} .feedback p:last-child{margin:0}
+.fb-title{display:flex;gap:8px;align-items:flex-start;font-weight:700;font-size:15.5px;margin:0 0 6px}
+.fb-ico{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;flex:none;font-size:13px;font-weight:700;color:#fff;background:var(--muted)}
+.bad .fb-ico{background:var(--bad)} .ok .fb-ico{background:var(--ok)} .warn .fb-ico{background:var(--warn)}
+details.work summary,details.concepts summary{cursor:pointer;font-family:var(--f-type);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+details.work ol{margin:10px 0 0;padding-left:20px} details.work li{margin:6px 0;font-size:14px}
+details.concepts dl{margin:10px 0 0} details.concepts dt{font-weight:700;margin-top:8px} details.concepts dd{margin:2px 0 0;font-size:14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:980px){ .app{height:auto} .main{grid-template-columns:minmax(0,1fr)} .stage{height:64vh;min-height:430px} .panel{overflow:visible} }
+@media (max-width:600px){ .hint{display:none} .sticky{width:190px;font-size:12.5px;bottom:70px;right:10px;padding:12px} .btn-test{font-size:16px;padding:8px 14px} .case{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (prefers-reduced-motion: reduce){ .sticky{transition:none} }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">
+      <h1>Dog Clutch Engagement</h1>
+      <p>Geared shafts A and B · coaxial shaft C at rest · impulsive engagement</p>
+    </div>
+    <div class="steps" role="tablist" aria-label="Activity steps">
+      <button role="tab" data-step="1" aria-selected="true"><span class="n">1</span><span class="t">Explore</span><span class="s" id="done1"></span></button>
+      <button role="tab" data-step="2" aria-selected="false"><span class="n">2</span><span class="t">Predict</span><span class="s" id="done2"></span></button>
+      <button role="tab" data-step="3" aria-selected="false"><span class="n">3</span><span class="t">Explain</span><span class="s" id="done3"></span></button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="stage" id="stage" tabindex="0" role="application" aria-label="3D model of shafts A, B and C with a dog clutch between B and C. Press E to engage the clutch and R to reset.">
+      <div class="overlay" id="overlay"></div>
+      <div class="hud">
+        <div class="hint">Drag to orbit, right-drag to pan, scroll to zoom. <kbd>E</kbd> engages the clutch, <kbd>R</kbd> resets. Positive rotation is anticlockwise seen from the C end (right-hand rule about +x).</div>
+        <div class="viewbtns" role="group" aria-label="Camera">
+          <button class="btn" id="view3d">3D view</button>
+          <button class="btn" id="viewSide">Elevation</button>
+          <button class="btn" id="viewEnd">End view</button>
+        </div>
+      </div>
+      <div class="sticky" id="sticky" role="note" aria-live="polite"></div>
+      <div class="toolbar">
+        <div class="tgroup">
+          <label class="sm" for="speed">Playback</label>
+          <select id="speed">
+            <option value="0.05">0.05 × real</option>
+            <option value="0.1" selected>0.1 × real</option>
+            <option value="0.25">0.25 × real</option>
+            <option value="1">Real time</option>
+          </select>
+          <label class="check"><input type="checkbox" id="arrows" checked> Direction arrows</label>
+        </div>
+        <button class="btn btn-test" id="engage">Engage clutch</button>
+      </div>
+    </div>
+
+    <aside class="panel" aria-label="Worksheet">
+      <section class="sec" aria-labelledby="probTitle">
+        <h2>The problem</h2>
+        <h3 id="probTitle">Speeds just after the clutch engages</h3>
+        <p>Shafts <span class="sa">A</span> and <span class="sb">B</span> are connected by meshing gears of pitch radii r<sub>A</sub> and r<sub>B</sub>, so <span class="math">θ̇<sub>B</sub>/θ̇<sub>A</sub> = r<sub>A</sub>/r<sub>B</sub></span>. Shaft A and its gear have inertia I<sub>A</sub>; shaft B and its gear have I<sub>B</sub>. A third shaft <span class="sc">C</span> (inertia I<sub>C</sub>) is coaxial with B and initially at rest.</p>
+        <p>Shaft C is suddenly connected to B by engaging the dog clutch. With frictionless bearings, what are the angular velocities of the shafts immediately after engagement?</p>
+      </section>
+
+      <section class="sec" id="stepSec" aria-labelledby="stepTitle">
+        <h2>Your task</h2>
+        <h3 id="stepTitle"></h3>
+        <div id="stepBody"></div>
+      </section>
+
+      <section class="sec" id="exploreSec" aria-labelledby="exTitle">
+        <h2 id="exTitle">Shaft data</h2>
+        <div class="sliders">
+          <div class="sl"><label for="zA">Gear A teeth (module 5 mm)</label><output id="ozA" for="zA"></output><input type="range" id="zA" min="20" max="48" step="2" value="36"></div>
+          <div class="sl"><label for="zB">Gear B teeth</label><output id="ozB" for="zB"></output><input type="range" id="zB" min="14" max="36" step="2" value="24"></div>
+          <div class="sl"><label for="IA">I<sub>A</sub>, shaft A + gear</label><output id="oIA" for="IA"></output><input type="range" id="IA" min="0.01" max="0.10" step="0.005" value="0.04"></div>
+          <div class="sl"><label for="IB">I<sub>B</sub>, shaft B + gear</label><output id="oIB" for="IB"></output><input type="range" id="IB" min="0.005" max="0.05" step="0.005" value="0.01"></div>
+          <div class="sl"><label for="IC">I<sub>C</sub>, shaft C + flywheel</label><output id="oIC" for="IC"></output><input type="range" id="IC" min="0.005" max="0.10" step="0.005" value="0.02"></div>
+          <div class="sl"><label for="wA0">Initial speed of A</label><output id="owA0" for="wA0"></output><input type="range" id="wA0" min="100" max="1000" step="50" value="600"></div>
+        </div>
+      </section>
+
+      <section class="sec" id="predictSec" hidden aria-labelledby="prTitle">
+        <h2 id="prTitle">Test case</h2>
+        <div class="case" id="caseGrid"></div>
+        <form class="stack" id="predForm" novalidate>
+          <div class="q"><label for="p1">Speed of <span class="sa">A</span> just after</label><input id="p1" inputmode="decimal"><span class="unit">rev/min</span><span class="verdict" id="v1"></span></div>
+          <div class="q"><label for="p2">Speed of <span class="sc">C</span> just after</label><input id="p2" inputmode="decimal"><span class="unit">rev/min</span><span class="verdict" id="v2"></span></div>
+          <div class="q"><label for="p3">Direction of C compared with A</label><select id="p3"><option value="">Choose…</option><option value="same">Same</option><option value="opp">Opposite</option></select><span class="verdict" id="v3"></span></div>
+          <div class="q"><label for="p4">Kinetic energy lost</label><input id="p4" inputmode="decimal"><span class="unit">% of the energy before engagement</span><span class="verdict" id="v4"></span></div>
+          <div class="rowend"><button class="btn" type="button" id="newCase">New numbers</button></div>
+        </form>
+      </section>
+
+      <section class="sec" id="explainSec" hidden aria-labelledby="exqTitle">
+        <h2 id="exqTitle">Questions</h2>
+        <form class="stack" id="mcq" novalidate>
+          <fieldset><legend>1. Which expression gives θ̇<sub>A</sub> just after engagement? (n = r<sub>A</sub>/r<sub>B</sub>)</legend>
+            <div class="opts" id="q1"></div><p class="verdict" id="m1"></p></fieldset>
+          <fieldset><legend>2. Why can't you equate the total angular momentum about the x-axis before and after?</legend>
+            <div class="opts" id="q2"></div><p class="verdict" id="m2"></p></fieldset>
+          <fieldset><legend>3. What happens to the kinetic energy during engagement?</legend>
+            <div class="opts" id="q3"></div><p class="verdict" id="m3"></p></fieldset>
+          <div class="rowend"><button class="btn" type="submit">Check answers</button></div>
+        </form>
+      </section>
+
+      <section class="sec" aria-labelledby="rdTitle">
+        <h2 id="rdTitle">Shaft speeds</h2>
+        <div class="tablewrap"><table class="read">
+          <thead><tr><th>Shaft</th><th style="text-align:right">Before</th><th style="text-align:right">Now</th><th>Sense</th></tr></thead>
+          <tbody id="readBody"></tbody>
+        </table></div>
+        <div class="after" id="afterGrid" hidden></div>
+        <div class="plotwrap"><canvas id="plot" aria-label="Graph of shaft speeds against time"></canvas></div>
+      </section>
+
+      <section class="feedback" id="feedback" aria-live="polite"></section>
+      <p class="sr" id="status" role="status" aria-live="polite"></p>
+
+      <section class="sec">
+        <details class="work" id="work">
+          <summary>Worked solution</summary>
+          <ol>
+            <li>Let F̂ be the tangential impulse between the gear teeth and Ĵ the impulsive torque transmitted by the clutch. Bearings are frictionless, so they exert no impulsive torque about each shaft's own axis.</li>
+            <li>Shaft A: <span class="math">I<sub>A</sub>(θ̇<sub>A</sub> − ω<sub>A</sub>) = −F̂ r<sub>A</sub></span></li>
+            <li>Shaft B (magnitudes): <span class="math">I<sub>B</sub>(θ̇<sub>B</sub> − ω<sub>B</sub>) = F̂ r<sub>B</sub> − Ĵ</span>. Shaft C: <span class="math">I<sub>C</sub> θ̇<sub>C</sub> = Ĵ</span></li>
+            <li>Kinematics after engagement: <span class="math">θ̇<sub>C</sub> = θ̇<sub>B</sub> = n θ̇<sub>A</sub></span>, with n = r<sub>A</sub>/r<sub>B</sub>, and before it ω<sub>B</sub> = n ω<sub>A</sub>.</li>
+            <li>Eliminate F̂ and Ĵ (multiply B and C by n and add to A): <span class="math">θ̇<sub>A</sub> = ω<sub>A</sub>(I<sub>A</sub> + n²I<sub>B</sub>) / (I<sub>A</sub> + n²(I<sub>B</sub> + I<sub>C</sub>))</span>.</li>
+            <li>Then <span class="math">θ̇<sub>B</sub> = θ̇<sub>C</sub> = n θ̇<sub>A</sub></span>. B and C turn opposite to A. This is conservation of “generalised momentum” referred to shaft A, not of total angular momentum.</li>
+            <li>Energy lost fraction: <span class="math">n²I<sub>C</sub> / (I<sub>A</sub> + n²(I<sub>B</sub> + I<sub>C</sub>))</span>, dissipated in the clutch jaws.</li>
+          </ol>
+        </details>
+      </section>
+
+      <section class="sec">
+        <details class="concepts">
+          <summary>Engineering notes</summary>
+          <dl>
+            <dt>Impulsive engagement</dt><dd>The clutch acts over a very short time, so speeds change but angles do not. Finite torques (such as drive or friction) have no time to act and are ignored.</dd>
+            <dt>Internal impulses</dt><dd>The gear tooth impulse acts equally and oppositely on A and B; the clutch impulse acts equally and oppositely on B and C.</dd>
+            <dt>Bearing impulses</dt><dd>The tooth impulse pushes shafts A and B sideways, so their bearings react. These reactions pass through different axes, so they have a net moment about any single x-axis. That is why total angular momentum is not conserved.</dd>
+            <dt>Equivalent inertia</dt><dd>Referred to shaft A, inertia on shaft B counts as n² I<sub>B</sub>. The engagement conserves I<sub>eq</sub> θ̇<sub>A</sub>, like a plastic collision.</dd>
+          </dl>
+        </details>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   Dog Clutch Engagement
+   World axes follow the figure: x along the shafts (towards C), y up.
+   Positive rotation is about +x (anticlockwise seen from the C end).
+   Units: scene in mm; physics in SI.
+   ===================================================================== */
+
+// <core> --------------------------------------------------------------
+const MOD = 5, PA = 20 * Math.PI / 180, BACKLASH = 0.5, RN = 128;
+const inv = a => Math.tan(a) - a, frac = x => x - Math.floor(x), wrapHalf = x => x - Math.round(x);
+const RPM = 60 / (2 * Math.PI);
+
+/* Impulsive engagement. Inputs: tooth counts, inertias (kg m²), initial speed of A (rad/s, +x).
+   Returns signed speeds about +x before and after, impulses, energies and momenta. */
+function engageResult(p) {
+  const n = p.zA / p.zB, rA = MOD * p.zA / 2000, rB = MOD * p.zB / 2000;
+  const I0 = p.IA + n * n * p.IB, I1 = p.IA + n * n * (p.IB + p.IC);
+  const wA1 = p.wA0 * I0 / I1;
+  const before = { A: p.wA0, B: -n * p.wA0, C: 0 };
+  const after = { A: wA1, B: -n * wA1, C: -n * wA1 };
+  const toothImp = p.IA * (p.wA0 - wA1) / rA;           // N s, tangential
+  const clutchImp = p.IC * n * wA1;                       // N m s, about C's axis
+  const KE0 = 0.5 * I0 * p.wA0 ** 2, KE1 = 0.5 * I1 * wA1 ** 2;
+  const H0 = p.IA * before.A + p.IB * before.B, H1 = p.IA * after.A + (p.IB + p.IC) * after.B;
+  return { n, rA, rB, I0, I1, before, after, toothImp, clutchImp, KE0, KE1, lossPct: 100 * (1 - KE1 / KE0), H0, H1 };
+}
+
+function makeProfile(z) {
+  const r = MOD * z / 2, rb = r * Math.cos(PA), ra = r + MOD, rf = r - 1.25 * MOD;
+  const s = Math.PI * MOD / 2 - BACKLASH / 2;
+  const psi = rho => s / (2 * r) + inv(PA) - inv(Math.acos(Math.min(1, rb / rho)));
+  const p = 2 * Math.PI / z, flank = [];
+  if (rf < rb) flank.push([rf, psi(rf)]);
+  const r0 = Math.max(rf, rb);
+  for (let i = 0; i <= 8; i++) { const t = i / 8; const rho = r0 + (ra - r0) * (t * t * 0.35 + t * 0.65); flank.push([rho, psi(rho)]); }
+  const pTip = psi(ra), pRoot = psi(rf), pts = [];
+  const add = (rho, a) => pts.push([rho * Math.cos(a), rho * Math.sin(a)]);
+  for (let k = 0; k < z; k++) {
+    const c = k * p;
+    for (const [rho, ps] of flank) add(rho, c - ps);
+    add(ra, c);
+    for (let i = flank.length - 1; i >= 0; i--) add(flank[i][0], c + flank[i][1]);
+    for (let j = 1; j < 3; j++) add(rf, c + pRoot + (p - 2 * pRoot) * j / 3);
+  }
+  return { z, r, ra, rf, p, pts };
+}
+/* Phase that makes gear B mesh with gear A when B sits at angle phi from A. */
+function meshTheta(pa, thA, pb, phi) {
+  const e = wrapHalf(frac((phi - thA) / pa.p) + frac((phi + Math.PI) / pb.p) - 0.5);
+  return e * pb.p;
+}
+// </core> -------------------------------------------------------------
+
+const $ = s => document.querySelector(s);
+const stage = $('#stage'), overlay = $('#overlay');
+const fmt = (x, dp = 1) => (+x).toFixed(dp);
+
+/* ------------------------------ state ------------------------------ */
+let step = 1, playback = 0.1, showArrows = true, dirty = true;
+const params = { zA: 36, zB: 24, IA: 0.04, IB: 0.01, IC: 0.02, wA0rpm: 600 };
+let caseP = null;                      // step 2 numbers
+const sim = { t: 0, w: { A: 0, B: 0, C: 0 }, th: { A: 0, B: 0, C: 0 }, state: 'open', slideT: 0, engageT: null, result: null, hist: [] };
+const done = new Set(); let mcqChecks = 0;
+const active = () => step === 2 && caseP ? caseP : params;
+const pIn = q => ({ zA: q.zA, zB: q.zB, IA: q.IA, IB: q.IB, IC: q.IC, wA0: q.wA0rpm / RPM });
+
+/* ------------------------------ scene ------------------------------ */
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+stage.insertBefore(renderer.domElement, overlay); renderer.domElement.setAttribute('aria-hidden', 'true');
+const PAPER = 0xf3f2ec, FLOOR = -170;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(PAPER); scene.fog = new THREE.Fog(PAPER, 1700, 3400);
+const camera = new THREE.PerspectiveCamera(34, 1, 5, 8000);
+const VIEWS = { d3: [new THREE.Vector3(420, 420, 980), new THREE.Vector3(80, 40, 0)], side: [new THREE.Vector3(90, 60, 1250), new THREE.Vector3(90, 60, 0)], end: [new THREE.Vector3(1250, 70, 0.01), new THREE.Vector3(0, 70, 0)] };
+camera.position.copy(VIEWS.d3[0]);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.copy(VIEWS.d3[1]); controls.enableDamping = !matchMedia('(prefers-reduced-motion: reduce)').matches; controls.dampingFactor = 0.12;
+controls.minDistance = 250; controls.maxDistance = 2600;
+controls.addEventListener('change', () => dirty = true);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb9b4a5, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-200, 900, 500); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -700, right: 800, top: 500, bottom: -500, near: 100, far: 2200 }); scene.add(sun);
+(function paper() {
+  const c = document.createElement('canvas'); c.width = c.height = 500; const x = c.getContext('2d');
+  x.fillStyle = '#f3f2ec'; x.fillRect(0, 0, 500, 500);
+  for (let i = 0; i <= 50; i++) { const p = i * 10 + 0.5; x.strokeStyle = i % 5 === 0 ? 'rgba(80,110,140,.28)' : 'rgba(80,110,140,.12)'; x.lineWidth = i % 5 === 0 ? 1.6 : 1; x.beginPath(); x.moveTo(p, 0); x.lineTo(p, 500); x.moveTo(0, p); x.lineTo(500, p); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(16, 16); t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ map: t, roughness: 1 }));
+  m.rotation.x = -Math.PI / 2; m.position.y = FLOOR; m.receiveShadow = true; scene.add(m);
+})();
+const INK = 0x24272b, edgeMat = new THREE.LineBasicMaterial({ color: INK, transparent: true, opacity: 0.5 });
+const shaftMat = new THREE.MeshStandardMaterial({ color: 0xbfc3c7, metalness: 0.55, roughness: 0.35 });
+const darkMat = new THREE.MeshStandardMaterial({ color: 0x55595e, metalness: 0.45, roughness: 0.45 });
+const COL = { A: 0x2245d0, B: 0xc0141c, C: 0x139a37 };
+const mat = k => new THREE.MeshStandardMaterial({ color: COL[k], metalness: 0.2, roughness: 0.5 });
+const edges = (m, thr = 30) => { m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, thr), edgeMat)); return m; };
+/* A rotor: outer group aligned so local z = world +x; inner group spins about it. */
+function rotor(x, y) { const o = new THREE.Group(), i = new THREE.Group(); o.rotation.y = Math.PI / 2; o.position.set(x, y, 0); o.add(i); scene.add(o); return { o, i }; }
+function extrudeX(shape, depth, curve = 32) { return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: curve }); }
+function circleShape(r, hole) { const s = new THREE.Shape(); s.absarc(0, 0, r, 0, Math.PI * 2, false); if (hole) { const h = new THREE.Path(); h.absarc(0, 0, hole, 0, Math.PI * 2, true); s.holes.push(h); } return s; }
+function shaftMesh(x0, x1, r = 10) { const g = new THREE.CylinderGeometry(r, r, x1 - x0, 24); g.rotateZ(Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); const m = new THREE.Mesh(g, shaftMat); m.castShadow = true; return m; }
+// Jaws: annular sectors on a disc, pointing along +local z (or −z)
+function clutchHalf(material, dir) {
+  const g = new THREE.Group();
+  const disc = edges(new THREE.Mesh(extrudeX(circleShape(44, 10), 18, 40), material)); disc.position.z = dir > 0 ? 0 : 0; g.add(disc);
+  for (let k = 0; k < 3; k++) {
+    const a0 = k * 2 * Math.PI / 3, a1 = a0 + Math.PI / 3 - 0.06, s = new THREE.Shape();
+    s.absarc(0, 0, 44, a0 + 0.03, a1, false); s.absarc(0, 0, 20, a1, a0 + 0.03, true); s.closePath();
+    const j = edges(new THREE.Mesh(extrudeX(s, 20, 12), material)); j.position.z = dir > 0 ? 18 : -20; j.castShadow = true; g.add(j);
+  }
+  return g;
+}
+// Curved rotation arrow in the rotor plane
+function makeArrow(R) {
+  const g = new THREE.Group(), inner = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: INK });
+  const a0 = 0.5, arc = 4.4, tor = new THREE.Mesh(new THREE.TorusGeometry(R, 2.2, 8, 64, arc), m); tor.rotation.z = a0;
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(7, 18, 16), m), ae = a0 + arc;
+  cone.position.set(R * Math.cos(ae), R * Math.sin(ae), 0); cone.rotation.z = ae;
+  inner.add(tor, cone); g.add(inner); g.rotation.y = Math.PI / 2; g.visible = false; scene.add(g); g.userData.inner = inner; return g;
+}
+
+// Layout along x (mm)
+const X = { gear: -230, aEnd: [-260, 20], bEnd: [-320, 66], clutchB: 66, clutchCopen: 144, clutchCshut: 104, cShaft: [104, 540], fly: 330, bear: { A: [-250, -10], B: [-300, 45], C: [200, 500] } };
+const R = { A: rotor(0, 0), B: rotor(0, 0), C: rotor(0, 0) };
+const parts = { gearA: null, gearB: null, fly: null };
+const statics = new THREE.Group(); scene.add(statics);
+const arrows = { A: makeArrow(34), B: makeArrow(34), C: makeArrow(34) };
+const labels = [];
+function label(cls, html, getPos) { const el = document.createElement('div'); el.className = 'plabel ' + cls; el.innerHTML = html; el.setAttribute('aria-hidden', 'true'); overlay.appendChild(el); labels.push({ el, getPos }); }
+let yB = 150, flyR = 100, pfA, pfB;
+
+function flyRadius(IC) { return 50 + 300 * Math.sqrt(IC); }
+function build() {
+  const q = active();
+  pfA = makeProfile(q.zA); pfB = makeProfile(q.zB); yB = pfA.r + pfB.r; flyR = flyRadius(q.IC);
+  for (const k of ['A', 'B', 'C']) { R[k].i.children.slice().forEach(c => { R[k].i.remove(c); c.traverse(o => o.geometry && o.geometry.dispose()); }); }
+  statics.children.slice().forEach(c => { statics.remove(c); c.traverse(o => o.geometry && o.geometry.dispose()); });
+  R.A.o.position.set(0, 0, 0); R.B.o.position.set(0, yB, 0); R.C.o.position.set(0, yB, 0);
+  // In the rotor frame local z = world x, so world-x offsets go on local z.
+  const gear = (pf, k) => { const s = new THREE.Shape(pf.pts.map(p => new THREE.Vector2(p[0], p[1]))); const h = new THREE.Path(); h.absarc(0, 0, 10, 0, Math.PI * 2, true); s.holes.push(h); const m = edges(new THREE.Mesh(extrudeX(s, 22, 8), mat(k)), 35); m.position.z = X.gear; m.castShadow = true; return m; };
+  // Shafts as children of rotors so they spin (use a flat mark so rotation is visible)
+  const shaftLocal = (x0, x1, r = 10) => { const g = new THREE.CylinderGeometry(r, r, x1 - x0, 24); g.rotateX(Math.PI / 2); g.translate(0, 0, (x0 + x1) / 2); const m = new THREE.Mesh(g, shaftMat); m.castShadow = true; return m; };
+  const stripe = (x0, x1, r = 10.3) => { const m = new THREE.Mesh(new THREE.BoxGeometry(3, 1.5, x1 - x0), darkMat); m.position.set(0, r, (x0 + x1) / 2); return m; };
+  R.A.i.add(gear(pfA, 'A'), shaftLocal(...X.aEnd), stripe(X.aEnd[0] + 10, X.gear - 6), stripe(X.gear + 30, X.aEnd[1] - 4));
+  R.B.i.add(gear(pfB, 'B'), shaftLocal(...X.bEnd), stripe(X.bEnd[0] + 10, X.gear - 6), stripe(X.gear + 30, X.clutchB - 6));
+  const cb = clutchHalf(darkMat, +1); cb.position.z = X.clutchB; R.B.i.add(cb);
+  // Shaft C, its sliding clutch half (child group, slides along local z) and flywheel
+  R.C.i.add(shaftLocal(...X.cShaft), stripe(X.cShaft[0] + 50, X.fly - 6), stripe(X.fly + 86, X.cShaft[1] - 6));
+  const fly = edges(new THREE.Mesh(extrudeX(circleShape(flyR, 10), 80, 64), mat('C'))); fly.position.z = X.fly; fly.castShadow = true; R.C.i.add(fly);
+  const flyMark = new THREE.Mesh(new THREE.BoxGeometry(8, flyR * 0.6, 1.5), new THREE.MeshBasicMaterial({ color: 0xffffff })); flyMark.position.set(0, flyR * 0.62, X.fly + 80.8); R.C.i.add(flyMark);
+  parts.slider = clutchHalf(darkMat, -1); R.C.i.add(parts.slider);
+  // Bearings (static pedestals from the floor to each shaft)
+  const ped = (x, y) => {
+    const h = y - FLOOR - 22, b = edges(new THREE.Mesh(new THREE.BoxGeometry(34, h, 60), new THREE.MeshStandardMaterial({ color: 0xd8d6cf, roughness: 0.8 })));
+    b.position.set(x, FLOOR + h / 2, 0); b.castShadow = b.receiveShadow = true; statics.add(b);
+    const ring = edges(new THREE.Mesh(new THREE.CylinderGeometry(22, 22, 30, 32).rotateZ(Math.PI / 2), darkMat)); ring.position.set(x, y, 0); ring.castShadow = true; statics.add(ring);
+  };
+  X.bear.A.forEach(x => ped(x, 0)); X.bear.B.forEach(x => ped(x, yB)); X.bear.C.forEach(x => ped(x, yB));
+  // Centre lines (chain-dotted, as in the figure)
+  for (const [y, x0, x1] of [[0, -360, 70], [yB, -360, 580]]) {
+    const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x0, y, 0), new THREE.Vector3(x1, y, 0)]);
+    const l = new THREE.Line(g, new THREE.LineDashedMaterial({ color: INK, dashSize: 18, gapSize: 6 })); l.computeLineDistances(); statics.add(l);
+  }
+  // Axis triad near the floor
+  const tri = new THREE.Group();
+  [[1, 0, 0], [0, 1, 0], [0, 0, 1]].forEach(d => tri.add(new THREE.ArrowHelper(new THREE.Vector3(...d), new THREE.Vector3(), 60, INK, 14, 8)));
+  tri.position.set(380, FLOOR + 4, 140); statics.add(tri);
+  arrows.A.position.set(X.aEnd[0] - 14, 0, 0); arrows.B.position.set(X.bEnd[0] - 14, yB, 0); arrows.C.position.set(X.cShaft[1] + 14, yB, 0);
+  placeSlider(); syncRotors(); dirty = true;
+}
+function placeSlider() {
+  const f = sim.state === 'open' ? 0 : sim.state === 'sliding' ? Math.min(1, sim.slideT) : 1;
+  const ease = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+  if (parts.slider) parts.slider.position.z = X.clutchCopen + (X.clutchCshut - X.clutchCopen) * ease;
+}
+function syncRotors() { R.A.i.rotation.z = sim.th.A; R.B.i.rotation.z = sim.th.B; R.C.i.rotation.z = sim.th.C; dirty = true; }
+// Typewriter labels like the source figure
+label('big a', 'A', () => new THREE.Vector3(X.aEnd[0] - 70, 0, 0));
+label('big b', 'B', () => new THREE.Vector3(X.bEnd[0] - 60, yB, 0));
+label('big c', 'C', () => new THREE.Vector3(X.cShaft[1] + 50, yB, 0));
+label('', 'dog clutch', () => new THREE.Vector3(X.clutchB + 50, yB + 70, 0));
+label('', 'gears', () => new THREE.Vector3(X.gear + 10, yB + pfB.ra + 24, 0));
+label('c', 'flywheel', () => new THREE.Vector3(X.fly + 40, yB + flyR + 22, 0));
+
+/* ------------------------------ simulation ------------------------------ */
+function resetSim(msg) {
+  const q = pIn(active()), n = q.zA / q.zB;
+  sim.t = 0; sim.state = 'open'; sim.slideT = 0; sim.engageT = null; sim.result = null; sim.hist = [];
+  sim.w = { A: q.wA0, B: -n * q.wA0, C: 0 };
+  sim.th = { A: 0.3, B: 0, C: 0 };
+  sim.th.B = meshTheta(pfA, sim.th.A, pfB, Math.PI / 2);   // B sits straight above A
+  placeSlider(); syncRotors(); updateEngageBtn(); renderRead(); drawPlot();
+  $('#afterGrid').hidden = true;
+  if (msg) setStatus(msg);
+}
+function engage() {
+  if (sim.state !== 'open') { resetSim(); note(STICKY[step]); showFeedback('info', 'Clutch released and shafts reset', '<p>Shaft C is stopped again and A is back at its starting speed.</p>'); return; }
+  if (step === 2 && !predictionComplete()) {
+    showFeedback('warn', 'Make your prediction first', '<p>Fill in all four answers for the test case, then engage the clutch.</p>');
+    const first = ['#p1', '#p2', '#p3', '#p4'].find(id => !$(id).value.trim()); $(first).focus(); return;
+  }
+  sim.state = 'sliding'; sim.slideT = 0; updateEngageBtn();
+}
+function completeEngagement() {
+  const q = pIn(active()), r = engageResult(q);
+  sim.state = 'engaged'; sim.engageT = sim.t; sim.result = r;
+  sim.w = { ...r.after };
+  // Jaws of the C half drop into the gaps of the B half: lock C's angle to B's.
+  sim.th.C = sim.th.B + Math.PI / 3;
+  syncRotors(); updateEngageBtn(); renderRead(); renderAfter(r);
+  note(['B and C now turn together.', 'Some kinetic energy was lost in the clutch jaws.']);
+  if (step === 2) checkPrediction(r);
+  else if (step === 1) { done.add(1); renderSteps(); showFeedback('ok', 'Clutch engaged.', `<p>A slowed from ${fmt(q.wA0 * RPM, 0)} to ${fmt(r.after.A * RPM, 1)} rev/min. B and C now share ${fmt(-r.after.B * RPM, 1)} rev/min, turning opposite to A. ${fmt(r.lossPct, 1)}% of the kinetic energy was lost.</p><p>Change the sliders and try again. What happens as I<sub>C</sub> grows, or as the gear ratio changes?</p>`); }
+  setStatus(`Clutch engaged. A ${fmt(r.after.A * RPM, 1)} rev/min, B and C ${fmt(-r.after.B * RPM, 1)} rev/min in the opposite direction.`);
+}
+function updateEngageBtn() {
+  const b = $('#engage'); b.textContent = sim.state === 'open' ? 'Engage clutch' : sim.state === 'sliding' ? 'Engaging…' : 'Release and reset';
+  b.classList.toggle('reset', sim.state === 'engaged'); b.disabled = sim.state === 'sliding';
+}
+
+/* ------------------------------ UI ------------------------------ */
+const fb = $('#feedback'), sticky = $('#sticky');
+function setStatus(t) { $('#status').textContent = t; }
+function showFeedback(kind, title, html) {
+  const ico = { bad: '✕', ok: '✓', warn: '!', info: 'i' }[kind];
+  fb.className = 'feedback ' + kind; fb.innerHTML = `<p class="fb-title"><span class="fb-ico" aria-hidden="true">${ico}</span><span>${title}</span></p>${html || ''}`;
+}
+function note(lines) { sticky.innerHTML = lines.map(l => `<p>${l}</p>`).join(''); sticky.classList.add('flash'); setTimeout(() => sticky.classList.remove('flash'), 260); }
+const STICKY = {
+  1: ['Shaft C starts at rest.', 'The clutch engages in an instant: speeds change, angles don’t.'],
+  2: ['The tooth impulse acts on A and B, equal and opposite.', 'Bearings stop the shafts moving sideways. They can exert impulses too.'],
+  3: ['Is angular momentum conserved?', 'Think about what the bearings of A and B do.'],
+};
+const STEP_TEXT = {
+  1: ['Explore the engagement', '<p>Shafts A and B spin, linked by their gears. C is at rest. Press <b>Engage clutch</b> to lock C to B and watch every speed change at once. Then release, change the data and try again.</p><p class="small">The arrows at the shaft ends show each sense of rotation. The graph shows the jump at the instant of engagement.</p>'],
+  2: ['Predict the new speeds', '<p>Use the test case below. Work out the speeds of A and C just after engagement, the direction of C, and the share of kinetic energy lost. Then press <b>Engage clutch</b> to check.</p>'],
+  3: ['Explain the result', '<p>Answer the three questions. The worked solution is open to you at any point, but try first.</p>'],
+};
+function renderSteps() {
+  document.querySelectorAll('.steps [role=tab]').forEach(b => b.setAttribute('aria-selected', String(+b.dataset.step === step)));
+  for (const n of [1, 2, 3]) $('#done' + n).textContent = done.has(n) ? '✓' : '';
+  $('#stepTitle').textContent = STEP_TEXT[step][0]; $('#stepBody').innerHTML = STEP_TEXT[step][1];
+  $('#exploreSec').hidden = step === 3; $('#predictSec').hidden = step !== 2; $('#explainSec').hidden = step !== 3;
+  document.querySelectorAll('.sliders input').forEach(i => i.disabled = step !== 1);
+  syncSliders(active());
+}
+function syncSliders(q) {
+  $('#zA').value = q.zA; $('#zB').value = q.zB; $('#IA').value = q.IA; $('#IB').value = q.IB; $('#IC').value = q.IC; $('#wA0').value = q.wA0rpm;
+  $('#ozA').textContent = `${q.zA} teeth, r = ${fmt(MOD * q.zA / 2000, 3)} m`;
+  $('#ozB').textContent = `${q.zB} teeth, r = ${fmt(MOD * q.zB / 2000, 3)} m`;
+  $('#oIA').textContent = `${fmt(q.IA, 3)} kg m²`; $('#oIB').textContent = `${fmt(q.IB, 3)} kg m²`; $('#oIC').textContent = `${fmt(q.IC, 3)} kg m²`;
+  $('#owA0').textContent = `${q.wA0rpm} rev/min`;
+}
+const sense = w => Math.abs(w) < 1e-9 ? 'at rest' : w > 0 ? '↺ +x' : '↻ −x';
+function renderRead() {
+  const q = pIn(active()), n = q.zA / q.zB, b = { A: q.wA0, B: -n * q.wA0, C: 0 };
+  const cls = { A: 'sa', B: 'sb', C: 'sc' };
+  $('#readBody').innerHTML = ['A', 'B', 'C'].map(k => `<tr><td><span class="${cls[k]}">${k}</span></td><td class="num">${fmt(b[k] * RPM, 1)}</td><td class="num">${fmt(sim.w[k] * RPM, 1)}</td><td>${sense(sim.w[k])}</td></tr>`).join('') +
+    `<tr><td colspan="4" class="small">Speeds in rev/min, signed about +x.</td></tr>`;
+}
+function renderAfter(r) {
+  const g = $('#afterGrid'); g.hidden = false;
+  g.innerHTML = `
+    <div><span>Kinetic energy</span><strong>${fmt(r.KE0, 1)} → ${fmt(r.KE1, 1)} J</strong></div>
+    <div><span>Energy lost</span><strong>${fmt(r.lossPct, 1)} %</strong></div>
+    <div><span>Ang. momentum about x</span><strong>${fmt(r.H0, 3)} → ${fmt(r.H1, 3)}</strong></div>
+    <div><span>I<sub>eq</sub> θ̇<sub>A</sub> (at A)</span><strong>${fmt(r.I0 * r.before.A, 3)} → ${fmt(r.I1 * r.after.A, 3)}</strong></div>
+    <div><span>Tooth impulse F̂</span><strong>${fmt(r.toothImp, 2)} N s</strong></div>
+    <div><span>Clutch impulse Ĵ</span><strong>${fmt(r.clutchImp, 3)} N m s</strong></div>`;
+}
+
+/* ------------------------------ plot ------------------------------ */
+const plot = $('#plot'), WIN = 2.0;
+function drawPlot() {
+  const w = plot.clientWidth, h = plot.clientHeight; if (!w || !h) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  if (plot.width !== Math.round(w * dpr)) { plot.width = Math.round(w * dpr); plot.height = Math.round(h * dpr); }
+  const x = plot.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+  const q = pIn(active()), n = q.zA / q.zB, top = Math.max(q.wA0, n * q.wA0) * RPM * 1.12;
+  const m = { l: 50, r: 30, t: 10, b: 26 }, W = w - m.l - m.r, H = h - m.t - m.b;
+  const t1 = Math.max(WIN, sim.t), t0 = t1 - WIN;
+  const X = t => m.l + (t - t0) / WIN * W, Y = v => m.t + H / 2 - v / top * H / 2;
+  x.font = '11px "Courier Prime", monospace'; x.fillStyle = '#575d64'; x.strokeStyle = 'rgba(80,110,140,.18)'; x.lineWidth = 1;
+  const stepV = top > 1200 ? 500 : top > 600 ? 250 : 100;
+  for (let v = -Math.floor(top / stepV) * stepV; v <= top; v += stepV) { x.beginPath(); x.moveTo(m.l, Y(v)); x.lineTo(m.l + W, Y(v)); x.stroke(); x.textAlign = 'right'; x.fillText(String(v), m.l - 6, Y(v) + 4); }
+  x.strokeStyle = '#1c1f23'; x.beginPath(); x.moveTo(m.l, Y(0)); x.lineTo(m.l + W, Y(0)); x.stroke();
+  x.textAlign = 'center'; x.fillText('time (simulated) →', m.l + W / 2, h - 6);
+  x.save(); x.translate(12, m.t + H / 2); x.rotate(-Math.PI / 2); x.fillText('rev/min about +x', 0, 0); x.restore();
+  if (sim.engageT !== null && sim.engageT >= t0) { x.setLineDash([5, 4]); x.strokeStyle = '#1c1f23'; x.beginPath(); x.moveTo(X(sim.engageT), m.t); x.lineTo(X(sim.engageT), m.t + H); x.stroke(); x.setLineDash([]); x.textAlign = 'left'; x.fillText('clutch', X(sim.engageT) + 4, m.t + 10); }
+  const col = { A: '#1d3fc9', B: '#b3121a', C: '#12782a' };
+  for (const k of ['A', 'B', 'C']) {
+    x.strokeStyle = col[k]; x.lineWidth = k === 'C' ? 2 : 2.6; x.setLineDash(k === 'C' ? [7, 4] : []);
+    x.beginPath(); let started = false;
+    for (const s of sim.hist) { if (s.t < t0) continue; const px = X(s.t), py = Y(s[k] * RPM); started ? x.lineTo(px, py) : (x.moveTo(px, py), started = true); }
+    x.stroke(); x.setLineDash([]);
+    const last = sim.hist[sim.hist.length - 1];
+    if (last) { x.fillStyle = col[k]; x.font = 'bold 12px "Courier Prime", monospace'; x.textAlign = 'left'; const off = k === 'C' && sim.state === 'engaged' ? 12 : 0; x.fillText(k, m.l + W + 6, Y(last[k] * RPM) + 4 + off); }
+  }
+}
+
+/* ------------------------------ step 2 ------------------------------ */
+function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+function newCase() {
+  let zA, zB; do { zA = rnd([24, 28, 32, 36, 40, 44, 48]); zB = rnd([16, 20, 24, 28, 32]); } while (zA === zB);
+  caseP = { zA, zB, IA: rnd([0.02, 0.03, 0.04, 0.05, 0.06]), IB: rnd([0.005, 0.01, 0.015, 0.02]), IC: rnd([0.01, 0.02, 0.03, 0.04, 0.05]), wA0rpm: rnd([300, 400, 500, 600, 800]) };
+  ['#p1', '#p2', '#p3', '#p4'].forEach(id => $(id).value = ''); ['#v1', '#v2', '#v3', '#v4'].forEach(id => { $(id).textContent = ''; $(id).className = 'verdict'; });
+  renderCase(); build(); resetSim(); syncSliders(caseP);
+}
+function renderCase() {
+  const q = caseP;
+  $('#caseGrid').innerHTML = `
+    <div><span>r<sub>A</sub></span><strong>${fmt(MOD * q.zA / 2000, 3)} m</strong></div>
+    <div><span>r<sub>B</sub></span><strong>${fmt(MOD * q.zB / 2000, 3)} m</strong></div>
+    <div><span>ω<sub>A</sub> before</span><strong>${q.wA0rpm} rev/min</strong></div>
+    <div><span>I<sub>A</sub></span><strong>${q.IA} kg m²</strong></div>
+    <div><span>I<sub>B</sub></span><strong>${q.IB} kg m²</strong></div>
+    <div><span>I<sub>C</sub></span><strong>${q.IC} kg m²</strong></div>`;
+}
+function predictionComplete() { return ['#p1', '#p2', '#p3', '#p4'].every(id => $(id).value.trim()); }
+function checkPrediction(r) {
+  const items = [
+    { id: 1, v: r.after.A * RPM, hint: 'Refer everything to shaft A: inertia on B or C counts as n²I. The quantity I<sub>eq</sub> θ̇<sub>A</sub> is the same just before and just after.' },
+    { id: 2, v: -r.after.C * RPM, hint: 'C turns with B after engagement, and B turns n times as fast as A.' },
+    { id: 3, v: 'opp', hint: 'An external gear mesh reverses direction, and the clutch makes C turn with B.' },
+    { id: 4, v: r.lossPct, abs: 0.5, hint: 'Compare ½ I<sub>eq</sub> θ̇<sub>A</sub>² before and after, using the right I<sub>eq</sub> each time.' },
+  ];
+  let right = 0; const wrong = [];
+  for (const it of items) {
+    const raw = $('#p' + it.id).value.trim(), el = $('#v' + it.id);
+    const ok = typeof it.v === 'string' ? raw === it.v : Math.abs(parseFloat(raw) - it.v) <= Math.max(it.abs || 0, 0.01 * Math.abs(it.v));
+    el.className = 'verdict ' + (ok ? 'ok' : 'bad');
+    el.innerHTML = ok ? '✓ Correct' : `✕ Simulation gives ${typeof it.v === 'string' ? 'opposite' : fmt(it.v, it.id === 4 ? 1 : 1)}. ${it.hint}`;
+    if (ok) right++; else wrong.push(it);
+  }
+  if (right === 4) { done.add(2); renderSteps(); showFeedback('ok', 'All four predictions match the simulation.', '<p>Try <b>New numbers</b> for another case, or go to step 3 to explain why.</p>'); }
+  else showFeedback('warn', `${right} of 4 predictions match.`, '<p>The correct values and a hint are shown under each wrong answer. Press <b>Release and reset</b>, then try <b>New numbers</b>.</p>');
+}
+
+/* ------------------------------ step 3 ------------------------------ */
+const MCQ = [
+  { id: 1, right: 'a', opts: {
+      a: 'θ̇<sub>A</sub> = ω<sub>A</sub>(I<sub>A</sub> + n²I<sub>B</sub>) / (I<sub>A</sub> + n²(I<sub>B</sub> + I<sub>C</sub>))',
+      b: 'θ̇<sub>A</sub> = ω<sub>A</sub>(I<sub>A</sub> + I<sub>B</sub>) / (I<sub>A</sub> + I<sub>B</sub> + I<sub>C</sub>)',
+      c: 'θ̇<sub>A</sub> = ω<sub>A</sub>(I<sub>A</sub> − nI<sub>B</sub>) / (I<sub>A</sub> − n(I<sub>B</sub> + I<sub>C</sub>))',
+      d: 'θ̇<sub>A</sub> = ω<sub>A</sub>√[(I<sub>A</sub> + n²I<sub>B</sub>) / (I<sub>A</sub> + n²(I<sub>B</sub> + I<sub>C</sub>))]' },
+    why: { b: 'This ignores the gear ratio. Inertia on shaft B must be scaled by n² when referred to A.', c: 'This assumes total angular momentum about x is conserved. It isn’t, because of the bearing impulses.', d: 'This assumes kinetic energy is conserved. The clutch engagement is like a plastic collision, so energy is lost.' } },
+  { id: 2, right: 'b', opts: {
+      a: 'Because kinetic energy is lost in the clutch.',
+      b: 'The bearings of A and B exert impulsive forces on parallel but different axes, so they have a net moment about the x-axis.',
+      c: 'Because the clutch impulse is external to the system.',
+      d: 'It can: the result is the same either way.' },
+    why: { a: 'Energy loss and momentum balance are separate questions. A plastic collision loses energy but can still conserve momentum.', c: 'The clutch impulse acts between B and C, so it is internal and cancels.', d: 'Try it in step 2: equating I<sub>A</sub>θ̇<sub>A</sub> + I<sub>B</sub>θ̇<sub>B</sub> + I<sub>C</sub>θ̇<sub>C</sub> gives a different answer from the simulation.' } },
+  { id: 3, right: 'c', opts: {
+      a: 'It is conserved, because the bearings are frictionless.',
+      b: 'It increases, because C gains speed.',
+      c: 'Some is lost as heat, sound and vibration in the clutch jaws, as in a plastic collision.',
+      d: 'It is lost to friction in the gear teeth.' },
+    why: { a: 'Frictionless bearings remove external torques about each shaft, not losses in the clutch itself.', b: 'C gains energy, but A and B lose more.', d: 'The teeth are rigid and don’t slip; the loss happens where the two speeds are forced to match, at the clutch.' } },
+];
+MCQ.forEach(q => { $('#q' + q.id).innerHTML = Object.entries(q.opts).map(([k, t]) => `<label><input type="radio" name="mc${q.id}" value="${k}"><span>${t}</span></label>`).join(''); });
+$('#mcq').addEventListener('submit', e => {
+  e.preventDefault(); mcqChecks++; let right = 0;
+  for (const q of MCQ) {
+    const sel = document.querySelector(`input[name=mc${q.id}]:checked`), el = $('#m' + q.id);
+    if (!sel) { el.className = 'verdict bad'; el.textContent = 'Choose an answer.'; continue; }
+    const ok = sel.value === q.right; if (ok) right++;
+    el.className = 'verdict ' + (ok ? 'ok' : 'bad'); el.innerHTML = ok ? '✓ Correct' : '✕ ' + q.why[sel.value];
+  }
+  if (right === 3) { done.add(3); renderSteps(); showFeedback('ok', 'All three correct.', '<p>The engagement conserves generalised momentum referred to one shaft, not total angular momentum, and it dissipates energy like a plastic collision.</p>'); $('#work').open = true; }
+  else showFeedback('warn', `${right} of 3 correct.`, '<p>Read the note under each wrong answer and try again. Step 2 lets you test any idea numerically.</p>');
+});
+
+/* ------------------------------ wiring ------------------------------ */
+['zA', 'zB', 'IA', 'IB', 'IC', 'wA0'].forEach(id => $('#' + id).addEventListener('input', e => {
+  const v = +e.target.value; if (id === 'wA0') params.wA0rpm = v; else params[id] = v;
+  syncSliders(params); build(); resetSim();
+}));
+$('#engage').onclick = engage;
+$('#newCase').onclick = () => { newCase(); showFeedback('info', 'New test case loaded', '<p>Enter your four predictions, then engage the clutch.</p>'); note(STICKY[2]); };
+$('#speed').onchange = e => playback = +e.target.value;
+$('#arrows').onchange = e => { showArrows = e.target.checked; dirty = true; };
+document.querySelectorAll('.steps [role=tab]').forEach(b => b.onclick = () => {
+  step = +b.dataset.step;
+  if (step === 2 && !caseP) { newCase(); }
+  renderSteps(); build(); resetSim(); note(STICKY[step]);
+  showFeedback('info', { 1: 'Explore freely', 2: 'Predict, then engage', 3: 'Explain the result' }[step], { 1: '<p>Move the sliders, then engage the clutch.</p>', 2: '<p>Fill in all four predictions before you engage the clutch.</p>', 3: '<p>Use what you saw in steps 1 and 2.</p>' }[step]);
+});
+for (const [id, k] of [['#view3d', 'd3'], ['#viewSide', 'side'], ['#viewEnd', 'end']]) $(id).onclick = () => { camera.position.copy(VIEWS[k][0]); controls.target.copy(VIEWS[k][1]); controls.update(); dirty = true; };
+document.addEventListener('keydown', e => {
+  if (e.target.matches && e.target.matches('input, select, textarea')) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'e' || e.key === 'E') { e.preventDefault(); if (sim.state === 'open') engage(); }
+  if (e.key === 'r' || e.key === 'R') { e.preventDefault(); if (sim.state !== 'sliding') { resetSim(); note(STICKY[step]); } }
+});
+
+/* ------------------------------ loop ------------------------------ */
+const tmp = new THREE.Vector3();
+function place(el, v3, w, h) { tmp.copy(v3).project(camera); const hide = tmp.z > 1 || tmp.z < -1; el.style.display = hide ? 'none' : ''; if (!hide) el.style.transform = `translate(${(tmp.x + 1) / 2 * w}px, ${(1 - tmp.y) / 2 * h}px) translate(-50%, -50%)`; }
+function resize() { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); dirty = true; drawPlot(); }
+new ResizeObserver(resize).observe(stage);
+let last = performance.now(), plotTick = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dtReal = Math.min(0.05, (now - last) / 1000); last = now;
+  const dt = dtReal * playback;
+  if (sim.state === 'sliding') { sim.slideT += dtReal / 0.35; placeSlider(); if (sim.slideT >= 1) completeEngagement(); }
+  sim.t += dt;
+  for (const k of ['A', 'B', 'C']) sim.th[k] += sim.w[k] * dt;
+  syncRotors();
+  sim.hist.push({ t: sim.t, A: sim.w.A, B: sim.w.B, C: sim.w.C });
+  while (sim.hist.length > 2 && sim.hist[0].t < sim.t - WIN - 0.2) sim.hist.shift();
+  if (++plotTick % 2 === 0) { drawPlot(); if (plotTick % 20 === 0) renderRead(); }
+  for (const k of ['A', 'B', 'C']) { const a = arrows[k], wv = sim.w[k]; a.visible = showArrows && Math.abs(wv) > 1e-6; a.userData.inner.scale.y = wv < 0 ? -1 : 1; }
+  controls.update();
+  renderer.render(scene, camera);
+  const w = stage.clientWidth, h = stage.clientHeight;
+  labels.forEach(l => place(l.el, l.getPos(), w, h));
+}
+
+renderSteps(); build(); resetSim(); note(STICKY[1]);
+showFeedback('info', 'Explore freely', '<p>A and B are spinning; C is at rest. Press Engage clutch.</p>');
+resize(); requestAnimationFrame(frame);
+</script>
+
+</body></html>
